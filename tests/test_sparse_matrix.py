@@ -1,5 +1,5 @@
-from sparse_matrix import Matrix
 import pytest
+from sparse_matrix import Matrix
 
 m1 = Matrix([[0, 1, 0, 1, 0], [0, 0, 0, 3, 0], [0, 4, 0, 5, 0], [0, 6, 7, 8, 0], [9, 0, 0, 0, 0]])
 m2 = Matrix([[0, 0, 2, 3, 3], [1, 2, 3, 0, 0], [0, 0, 0, 3, 0], [1, 2, 0, 7, 0], [2, 2, 0, 0, 0]])
