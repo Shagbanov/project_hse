@@ -260,6 +260,9 @@ class Matrix:
     def permutation(self, line_column: str, number_i, number_j):  # Сложно
         """
         Перестановка строк и столбцов (matrix.permutation("строка", 1, 2) - переставляем 1 строку и 2 строку)
+        Если переставляем строки то все легко, есть индексы элементов, переставляем по индексам
+        Если переставляем столбцы, то мы должны проверить есть ли эти столбцы вообще в матрице, если есть то переставляем
+        Если нет, то нужно удалить этот столбец и добавить новый с помощью bisect
         :param line_column: что переставляем: строку или столбец
         :param number_i: номер первой строки или первого столбца
         :param number_j: номер второй строки или второго столбца
@@ -292,28 +295,26 @@ class Matrix:
                     t[matrix[1][matrix[0][i - 1]:matrix[0][i]].index(number_i)], t[matrix[1][matrix[0][i - 1]:matrix[0][i]].index(number_j)] = t[matrix[1][matrix[0][i - 1]:matrix[0][i]].index(number_j)], t[matrix[1][matrix[0][i - 1]:matrix[0][i]].index(number_i)]
                     matrix[2][matrix[0][i - 1]:matrix[0][i]] = t
 
-                    t = matrix[1][matrix[0][i - 1]:matrix[0][i]]
-                    t[matrix[1][matrix[0][i - 1]:matrix[0][i]].index(number_i)], t[matrix[1][matrix[0][i - 1]:matrix[0][i]].index(number_j)] = t[matrix[1][matrix[0][i - 1]:matrix[0][i]].index(number_j)], t[matrix[1][matrix[0][i - 1]:matrix[0][i]].index(number_i)]
-                    t.sort()
-                    matrix[1][matrix[0][i - 1]:matrix[0][i]] = t
-
                 elif number_i in matrix[1][matrix[0][i - 1]:matrix[0][i]]:
-                    t = matrix[1][matrix[0][i - 1]:matrix[0][i]]
-                    t.insert(bisect.bisect(t, number_j), number_j)
-                    del t[t.index(number_i)]
-                    matrix[1][matrix[0][i - 1]:matrix[0][i]] = t
+                    value = matrix[2][matrix[0][i-1] + matrix[1][matrix[0][i-1]:matrix[0][i]].index(number_i)]
+                    del matrix[2][matrix[0][i-1] + matrix[1][matrix[0][i-1]:matrix[0][i]].index(number_i)]
+                    del matrix[1][matrix[0][i-1] + matrix[1][matrix[0][i-1]:matrix[0][i]].index(number_i)]
+                    matrix[2].insert(matrix[0][i-1] + bisect.bisect(matrix[1][matrix[0][i - 1]:matrix[0][i]], number_j)-1, value)
+                    matrix[1].insert(matrix[0][i-1] + bisect.bisect(matrix[1][matrix[0][i - 1]:matrix[0][i]], number_j)-1, number_j)
 
                 elif number_j in matrix[1][matrix[0][i - 1]:matrix[0][i]]:
-                    t = matrix[1][matrix[0][i - 1]:matrix[0][i]]
-                    t.insert(bisect.bisect(t, number_i), number_i)
-                    del t[t.index(number_j)]
-                    matrix[1][matrix[0][i - 1]:matrix[0][i]] = t
+                    value = matrix[2][matrix[0][i-1] + matrix[1][matrix[0][i-1]:matrix[0][i]].index(number_j)]
+                    del matrix[2][matrix[0][i-1] + matrix[1][matrix[0][i-1]:matrix[0][i]].index(number_j)]
+                    del matrix[1][matrix[0][i-1] + matrix[1][matrix[0][i-1]:matrix[0][i]].index(number_j)]
+                    matrix[2].insert(matrix[0][i-1] + bisect.bisect(matrix[1][matrix[0][i - 1]:matrix[0][i]], number_i), value)
+                    matrix[1].insert(matrix[0][i-1] + bisect.bisect(matrix[1][matrix[0][i - 1]:matrix[0][i]], number_i), number_i)
 
         return Matrix(matrix)
 
     def __pow__(self, power, modulo=None):
         """
         Вычисляет обратную матрицу (matrix**(-1))
+        Находит таблицу миноров, транспонирует и умножает на 1/определитель
         :param power: в какую степень возводим
         :return: новая матрица
         """
@@ -335,18 +336,25 @@ class Matrix:
             matrix2 = (Matrix(matrix2).transposition() * (1 / (~Matrix(matrix))))
             return matrix2
 
-
     def rang(self):
+        """
+        Вычисляет ранг матрицы
+        Берет минимум от (строка, столбец). Далее проходиться по матрице и формирует сначало матрицы из мин * мин
+        Допусти если матрица 3 * 4 то мин = 3, и сначала буду формироваться матрицы 3 на 3 и проверяться определитель
+        далее матрица 3 * 3 смещается правее если там есть место, если нет то смещается вниз.
+        Далее получаем 4 матрица, где удалены определенные строки и столбцы, и проверяються матрицы 2*2 и так далее
+        :return: число
+        """
         matrix = copy.deepcopy(self.m)
-        if matrix[3] <= 1 and len(matrix[2]) <= 1:
-            return 1
+        if len(matrix[2]) == 1:
+            return matrix[2][0]  # если остался один элемнт
+        elif len(matrix[2]) == 0:
+            return 0  # если элементов вообще нет(остались одни нули)
 
         my_min = min(len(matrix[0]) - 1, matrix[3])
         for i in range(0, len(matrix[0]) - my_min):
-
             for j in range(0, matrix[3] - my_min + 1):
                 matrix_answ = [[0]*(my_min+1), [], [], my_min]
-                line = 0
                 for k in range(len(matrix[1])):
                     line = bisect.bisect(matrix[0], k) - i
                     if j <= matrix[1][k] < j + my_min and 0 <= line - 1 < my_min:
@@ -354,7 +362,7 @@ class Matrix:
                         matrix_answ[2].append(matrix[2][k])
                         matrix_answ[0][line] += 1
                         if bisect.bisect(matrix[0], k+1) - i > line:
-                            matrix_answ[0][line] += matrix_answ[0][line-1]
+                            matrix_answ[0][line] += matrix_answ[0][line-1]  # если следующая строка, то к количеству элементов прибавляетсья количесвто элементов предыдущей строки
                 if ~Matrix(matrix_answ) != 0:
                     return my_min
 
@@ -365,35 +373,6 @@ class Matrix:
 
         return max(m1.rang(), m2.rang(), m3.rang(), m4.rang())
 
-    # def rang(self):
-    #     """
-    #     Ранг матрица
-    #     :return: число
-    #     """
-    #     matrix = copy.deepcopy(self.m)
-    #     if matrix[3] == 1 and len(matrix[2]) <= 1:
-    #         return 1
-    #
-    #     my_min = min(len(matrix[0]) - 1, matrix[3])
-    #     count = 0
-    #     for i in range(0, len(matrix[0]) - my_min):
-    #         count += matrix[0][i]
-    #         for j in range(0, matrix[3] - my_min + 1):
-    #             matrix_answ = [matrix[0][i:my_min+1+i], [], [], my_min]
-    #             matrix_answ[1] = matrix[1][matrix_answ[0][0]:matrix_answ[0][-1]]
-    #             matrix_answ[2] = matrix[2][matrix_answ[0][0]:matrix_answ[0][-1]]
-    #             for k in range(len(matrix_answ[0])):
-    #                 matrix_answ[0][k] -= count
-    #             print(matrix_answ)
-    #             if ~Matrix(matrix_answ) != 0:
-    #                 return my_min
-    #
-    #     m1 = Matrix(matrix_answ).delete(1, 1)
-    #     m2 = Matrix(matrix_answ).delete(1, matrix[3])
-    #     m3 = Matrix(matrix_answ).delete(len(matrix[0]) - 1, 1)
-    #     m4 = Matrix(matrix_answ).delete(len(matrix[0]) - 1, matrix[3])
-    #
-    #     return max(m1.rang(), m2.rang(), m3.rang(), m4.rang())
 
 
 m1 = Matrix([[0, 1, 0, 1, 0], [0, 0, 0, 3, 0], [0, 4, 0, 5, 0], [0, 6, 7, 8, 0], [9, 0, 0, 0, 0]])
@@ -408,5 +387,9 @@ m8 = Matrix([[1,2,3],[4,5,6],[7,8,9]])
 
 m9 = Matrix([[0,0,-1,3],[1,1,0,2],[-1,-4,1,0]])
 m10 = Matrix([[1,2,3],[4,5,6],[7,8,9],[10,11,12]])
-m10.rang()
-# print(m3.permutation("столбец",1,3).to_matrix())
+
+m11 = Matrix([[1,0,0],[0,0,0],[0,0,0]])
+
+m12 = Matrix([[1,0,4,0,2]])
+
+print(m3.permutation("столбец", 2, 3).to_matrix())
