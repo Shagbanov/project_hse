@@ -17,7 +17,7 @@ class Matrix:
             Создание матрицы
             Можно ввести как список списков и также как сжатое хранение строкой
         """
-        if type(matrix[-1]) == int:  # Если матрица уже преобразовано в вид сжатой строки
+        if type(matrix[-1]) == int and len(matrix) > 0:  # Если матрица уже преобразовано в вид сжатой строки
             self.m = matrix
             return
         row_index = [0]  # строки
@@ -347,7 +347,7 @@ class Matrix:
         """
         matrix = copy.deepcopy(self.m)
         if len(matrix[2]) == 1:
-            return 1  # если остался один элемент
+            return 1  # если остался один элемент1!
         elif len(matrix[2]) == 0:
             return 0  # если элементов вообще нет(остались одни нули)
 
