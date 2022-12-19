@@ -347,7 +347,7 @@ class Matrix:
         """
         matrix = copy.deepcopy(self.m)
         if len(matrix[2]) == 1:
-            return matrix[2][0]  # если остался один элемнт
+            return 1  # если остался один элемент
         elif len(matrix[2]) == 0:
             return 0  # если элементов вообще нет(остались одни нули)
 
@@ -392,4 +392,5 @@ m11 = Matrix([[1,0,0],[0,0,0],[0,0,0]])
 
 m12 = Matrix([[1,0,4,0,2]])
 
-print(m3.permutation("столбец", 2, 3).to_matrix())
+print(m1.rang())
+
